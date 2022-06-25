@@ -1,0 +1,106 @@
+New-ADUser -Name "Jack Rob" -GivenName "Jack" -Surname "Rob" -SamAccountName
+"J.Rob" -UserPrincipalName "J.Rob@enterprise.com" -Path
+"OU=Managers,DC=enterprise,DC=com" -AccountPassword(Read-Host -AsSecureString "Input
+Password") -Enabled $true
+
+$path="OU=IT,DC=bryan,DC=com"
+$username=Read-Host "Enter name"
+$n=READ-host "Enter Number"
+$count=1..$n
+foreach ($i in $count)
+{ New-AdUser -Name $username$i -Path $path -Enabled $True -ChangePasswordAtLogon $true -AccountPassword (ConvertTo-SecureString "P@ssw0rd" -AsPlainText -force) -passThru }
+
+
+
+
+
+
+
+
+
+
+New-ADUser -Name "Jack Rob" -GivenName "Jack" -Surname "Rob" -SamAccountName "J.Rob" -UserPrincipalName "J.Rob@enterprise.com" -Path 'OU=Managers,DC=enterprise,DC=com' -AccountPassword(Read-Host -AsSecureString "Input Password") -Enabled $true
+
+
+
+
+#Enter a path to your import CSV file
+$ADUsers = Import-csv C:\Users\Administrator\Downloads\newusers.csv
+
+foreach ($User in $ADUsers)
+{
+
+       $Username    = $User.username
+       $Password    = $User.password
+       $Firstname   = $User.firstname
+       $Lastname    = $User.lastname
+    $Department = $User.department
+       $OU           = $User.ou
+
+       #Check if the user account already exists in AD
+       if (Get-ADUser -F {SamAccountName -eq $Username})
+       {
+               #If user does exist, output a warning message
+               Write-Warning "A user account $Username has already exist in Active Directory."
+       }
+       else
+       {
+              #If a user does not exist then create a new user account
+          
+        #Account will be created in the OU listed in the $OU variable in the CSV file; don’t forget to change the domain name in the"-UserPrincipalName" variable
+              New-ADUser `
+            -SamAccountName $Username `
+            -UserPrincipalName "$Username@bryan.com" `
+            -Name "$Firstname $Lastname" `
+            -GivenName $Firstname `
+            -Surname $Lastname `
+            -Enabled $True `
+            -ChangePasswordAtLogon $True `
+            -DisplayName "$Lastname, $Firstname" `
+            -Department $Department `
+            -Path $OU `
+            -AccountPassword (convertto-securestring $Password -AsPlainText -Force)
+
+       }
+}
+
+
+
+
+
+$File="C:\scripts\Computers.csv"
+$Path="OU=Devices,DC=bryan,DC=com"
+Import-Csv -Path $File | ForEach-Object { New-ADComputer -Name $_.name -Path $Path -Enabled $True }
+
+
+$dc = "bryan"
+$pw = "P@ssword" | ConvertTo-SecureString -asPlainText -Force
+$usr = "$dc\administrator"
+$pc = "R07GF"
+$creds = New-Object System.Management.Automation.PSCredential($usr,$pw)
+Add-Computer -ComputerName $pc -LocalCredential $pc\admin -DomainName $dc -Credential
+$creds -Verbose -Restart -Force
+
+
+$dc = "bryan"
+$pw = "P@ssword" | ConvertTo-SecureString -asPlainText -Force
+$usr = "$dc\administrator"
+$pc = "WIN-IF21PB1Q7NU"
+$creds = New-Object System.Management.Automation.PSCredential($usr,$pw)
+Remove-Computer -ComputerName $pc -Credential $creds –Verbose –Restart –Force
+
+
+$pc = read-host –Prompt “Input computer name to reset“
+$pw = read-host –Prompt “Input random characters for temp password“ –AsSecureString
+Get-ADComputer $pc | Set-ADAccountPassword –NewPassword:$pw -Reset:$true
+
+
+$Pclist = Get-Content C:\scripts\Computer.txt # Specify the path to the computer list.
+Foreach($pc in $Pclist)
+{
+Disable-ADAccount -Identity "$pc"
+Get-ADComputer -Identity "$pc" | Move-ADObject -TargetPath “OU=Disabled
+Computers,DC=enterprise,DC=com”
+}
+
+
